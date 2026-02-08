@@ -64,6 +64,7 @@
   <script type="module">
     import * as THREE from 'three';
     import { MindARThree } from 'mindar-image-three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
     document.addEventListener('DOMContentLoaded', () => {
       const startBtn = document.getElementById('start-btn');
@@ -82,7 +83,7 @@
         // ─────────────────────────────────────────────
         const mindarThree = new MindARThree({
           container: document.getElementById('container'),
-          imageTargetSrc: './targets.mind',
+          imageTargetSrc: './target.mind',
           // Smoothing filters — tweak for your use case
           // filterMinCF: 0.001,
           // filterBeta: 100,
@@ -102,11 +103,21 @@
         // — useful for debugging position/rotation.
         // Replace with your actual content later.
         // ─────────────────────────────────────────────
-        const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-        const material = new THREE.MeshNormalMaterial();
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(0, 0, 0.15);
-        anchor.group.add(cube);
+        // const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+        // const material = new THREE.MeshNormalMaterial();
+        // const cube = new THREE.Mesh(geometry, material);
+        // cube.position.set(0, 0, 0.15);
+        // anchor.group.add(cube);
+
+        const loader = new GLTFLoader();
+        loader.load('./assets/test-tube.glb', (gltf) => {
+          const model = gltf.scene;
+          model.scale.set(0.1, 0.1, 0.1);   // adjust until it looks right
+          model.position.set(0, 0, 0);       // centered on the target
+          anchor.group.add(model);
+        }, undefined, (error) => {
+          console.error('Model failed to load:', error);
+        });
 
         // ─────────────────────────────────────────────
         // LIGHTING
