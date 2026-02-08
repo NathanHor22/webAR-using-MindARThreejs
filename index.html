@@ -1,168 +1,60 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebAR Test — MindAR + Three.js</title>
-  <style>
-    * { margin: 0; padding: 0; }
-    body { overflow: hidden; background: #000; }
-    #container {
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-    }
-    #start-btn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-      padding: 16px 32px;
-      font-size: 18px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: sans-serif;
-    }
-    #start-btn:active { background: #388E3C; }
-    #info {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      color: white;
-      font-family: sans-serif;
-      background: rgba(0,0,0,0.6);
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      text-align: center;
-      max-width: 80%;
-    }
-  </style>
+import * as THREE from 'three';
+import { MindARThree } from 'mindar-image-three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-  <!--
-    IMPORT MAP
-    ==========
-    This tells the browser where to load Three.js and MindAR from.
-    Using CDN for convenience. To go fully offline/self-hosted,
-    download these files and point to local paths instead.
-  -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
-      "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
-    }
-  }
-  </script>
+document.addEventListener('DOMContentLoaded', () => {
+  const startBtn = document.getElementById('start-btn');
+  const info = document.getElementById('info');
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { MindARThree } from 'mindar-image-three';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+  startBtn.addEventListener('click', async () => {
+    startBtn.style.display = 'none';
+    info.textContent = 'Starting camera...';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const startBtn = document.getElementById('start-btn');
-      const info = document.getElementById('info');
-
-      startBtn.addEventListener('click', async () => {
-        startBtn.style.display = 'none';
-        info.textContent = 'Starting camera...';
-
-        // ─────────────────────────────────────────────
-        // INITIALIZE MindAR
-        // ─────────────────────────────────────────────
-        // Using MindAR's example target for quick testing.
-        // Replace imageTargetSrc with './targets.mind' 
-        // when you have your own compiled target.
-        // ─────────────────────────────────────────────
-        const mindarThree = new MindARThree({
-          container: document.getElementById('container'),
-          imageTargetSrc: './target.mind',
-          // Smoothing filters — tweak for your use case
-          // filterMinCF: 0.001,
-          // filterBeta: 100,
-        });
-
-        const { renderer, scene, camera } = mindarThree;
-
-        // ─────────────────────────────────────────────
-        // CREATE ANCHOR (locked to target image index 0)
-        // ─────────────────────────────────────────────
-        const anchor = mindarThree.addAnchor(0);
-
-        // ─────────────────────────────────────────────
-        // 3D CONTENT: A spinning cube
-        // ─────────────────────────────────────────────
-        // MeshNormalMaterial shows rainbow face colors
-        // — useful for debugging position/rotation.
-        // Replace with your actual content later.
-        // ─────────────────────────────────────────────
-        // const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-        // const material = new THREE.MeshNormalMaterial();
-        // const cube = new THREE.Mesh(geometry, material);
-        // cube.position.set(0, 0, 0.15);
-        // anchor.group.add(cube);
-
-        const loader = new GLTFLoader();
-        loader.load('./assets/test-tube.glb', (gltf) => {
-          const model = gltf.scene;
-          model.scale.set(0.1, 0.1, 0.1);   // adjust until it looks right
-          model.position.set(0, 0, 0);       // centered on the target
-          anchor.group.add(model);
-        }, undefined, (error) => {
-          console.error('Model failed to load:', error);
-        });
-
-        // ─────────────────────────────────────────────
-        // LIGHTING
-        // ─────────────────────────────────────────────
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(0, 1, 1);
-        scene.add(dirLight);
-
-        // ─────────────────────────────────────────────
-        // EVENTS: target found / lost
-        // ─────────────────────────────────────────────
-        anchor.onTargetFound = () => {
-          info.textContent = '✅ Target found!';
-          console.log('Target found');
-        };
-        anchor.onTargetLost = () => {
-          info.textContent = '👀 Point camera at your target image...';
-          console.log('Target lost');
-        };
-
-        // ─────────────────────────────────────────────
-        // START AR + RENDER LOOP
-        // ─────────────────────────────────────────────
-        try {
-          await mindarThree.start();
-          info.textContent = '👀 Point camera at your target image...';
-
-          renderer.setAnimationLoop(() => {
-            cube.rotation.y += 0.01;
-            renderer.render(scene, camera);
-          });
-        } catch (err) {
-          console.error('AR failed to start:', err);
-          info.textContent = '❌ Failed to start. Check camera permissions.';
-        }
-      });
+    const mindarThree = new MindARThree({
+      container: document.getElementById('container'),
+      imageTargetSrc: './targets.mind',          // ← fixed filename
     });
-  </script>
-</head>
-<body>
-  <div id="container">
-    <button id="start-btn">Start AR Experience</button>
-    <div id="info">Tap to start</div>
-  </div>
-</body>
-</html>
+
+    const { renderer, scene, camera } = mindarThree;
+    const anchor = mindarThree.addAnchor(0);
+
+    // Load 3D model
+    const loader = new GLTFLoader();
+    loader.load('./assets/chemistry_set.glb', (gltf) => {   // ← fixed filename
+      const model = gltf.scene;
+      model.scale.set(0.1, 0.1, 0.1);
+      model.position.set(0, 0, 0);
+      anchor.group.add(model);
+    }, undefined, (error) => {
+      console.error('Model failed to load:', error);
+    });
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(0, 1, 1);
+    scene.add(dirLight);
+
+    // Events
+    anchor.onTargetFound = () => {
+      info.textContent = '✅ Target found!';
+    };
+    anchor.onTargetLost = () => {
+      info.textContent = '👀 Point camera at your target image...';
+    };
+
+    // Start AR
+    try {
+      await mindarThree.start();
+      info.textContent = '👀 Point camera at your target image...';
+
+      renderer.setAnimationLoop(() => {
+        renderer.render(scene, camera);    // ← removed cube.rotation
+      });
+    } catch (err) {
+      console.error('AR failed to start:', err);
+      info.textContent = '❌ Failed to start. Check camera permissions.';
+    }
+  });
+});
